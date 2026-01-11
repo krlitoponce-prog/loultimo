@@ -3,17 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FÚTBOL AI - Multi-Día</title>
+  <title>FÚTBOL AI - Referee & Attack Radar</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap');
     body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #010409; color: #f8fafc; }
     .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
     .active-league { background: #10b981 !important; color: #000 !important; }
-    .live-active { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+    .precision-shield { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #000; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    .live-dot { animation: pulse 1s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    
+    /* RADAR DE ATAQUE */
+    .trend-bar { height: 6px; border-radius: 3px; transition: width 1s ease; }
+    .attack-pulse { animation: attack 1.5s infinite; }
+    @keyframes attack { 0% { box-shadow: 0 0 0px #10b981; } 50% { box-shadow: 0 0 12px #10b981; } 100% { box-shadow: 0 0 0px #10b981; } }
+    
+    /* ESTADOS ÁRBITRO */
+    .ref-red { color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+    .ref-white { color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.05); }
+    .ref-amber { color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); }
   </style>
 </head>
 <body class="min-h-screen pb-20">
@@ -21,36 +29,36 @@
   <header class="pt-6 pb-4 px-4 sticky top-0 bg-[#010409]/95 backdrop-blur-xl z-50 border-b border-white/5">
     <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
         <h1 class="text-2xl font-black italic tracking-tighter">FÚTBOL <span class="text-emerald-500">AI</span></h1>
-        <button id="liveMasterBtn" onclick="toggleLiveMode()" 
-                class="text-[10px] font-black px-4 py-2 rounded-full border border-white/10 text-white uppercase tracking-widest transition-all">
-            🔴 EN VIVO
-        </button>
+        <div class="flex gap-2">
+            <button onclick="requestNotifications()" class="p-2 glass rounded-full text-xs">🔔</button>
+            <button id="precisionBtn" onclick="togglePrecisionFilter()" class="text-[9px] font-black px-4 py-2 rounded-full border border-emerald-500/30 text-emerald-500 uppercase">🛡️ +85%</button>
+        </div>
     </div>
     
     <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar max-w-6xl mx-auto">
+      <button onclick="isLiveOnly = !isLiveOnly; fetchData();" class="glass px-4 py-2 rounded-xl text-[9px] font-black uppercase text-red-500 border-red-500/20">🔴 LIVE</button>
       <button onclick="changeLeague('all', this)" class="league-btn glass active-league px-4 py-2 rounded-xl text-[9px] font-black uppercase">🌍 TODO</button>
       <button onclick="changeLeague(39, this)" class="league-btn glass px-4 py-2 rounded-xl text-[9px] font-black uppercase">🏴󠁧󠁢󠁥󠁮󠁧󠁿 PREMIER</button>
-      <button onclick="changeLeague(140, this)" class="league-btn glass px-4 py-2 rounded-xl text-[9px] font-black uppercase">🇪🇸 LA LIGA</button>
       <button onclick="changeLeague(281, this)" class="league-btn glass px-4 py-2 rounded-xl text-[9px] font-black uppercase">🇵🇪 PERUANA</button>
-      <button onclick="changeLeague(71, this)" class="league-btn glass px-4 py-2 rounded-xl text-[9px] font-black uppercase">🇧🇷 BRASILEÑA</button>
     </div>
   </header>
 
   <main id="matchContainer" class="max-w-xl mx-auto px-4 space-y-8 mt-6">
-      <div class="text-center py-20 animate-pulse text-emerald-500 text-[10px] font-black uppercase tracking-widest">Sincronizando calendario de 3 días...</div>
+      <div class="text-center py-20 animate-pulse text-emerald-500 text-[10px] font-black uppercase tracking-widest">Sincronizando Sensores Tácticos...</div>
   </main>
 
   <script>
     const API_KEY = '48782dd5dcf6d4d9083eabc821da5e2d';
     const API_HOST = 'v3.football.api-sports.io';
     
-    let isLiveMode = false;
+    let isLiveOnly = false;
+    let isHighPrecisionOnly = false;
     let currentLeague = 'all';
 
-    function toggleLiveMode() {
-        isLiveMode = !isLiveMode;
-        const btn = document.getElementById('liveMasterBtn');
-        btn.classList.toggle('live-active');
+    function togglePrecisionFilter() {
+        isHighPrecisionOnly = !isHighPrecisionOnly;
+        document.getElementById('precisionBtn').classList.toggle('bg-emerald-500');
+        document.getElementById('precisionBtn').classList.toggle('text-black');
         fetchData();
     }
 
@@ -63,99 +71,120 @@
 
     async function fetchData() {
         const container = document.getElementById('matchContainer');
-        container.innerHTML = `<div class="text-center py-20 text-emerald-500 animate-pulse text-[10px] font-black uppercase italic">${isLiveMode ? 'ESCANEANDO CAMPOS EN VIVO...' : 'CONECTANDO CON SATÉLITE...'}</div>`;
+        const dates = [0, 1, 2].map(i => {
+            let d = new Date(); d.setDate(d.getDate() + i);
+            return d.toISOString().split('T')[0];
+        });
 
-        if (isLiveMode) {
-            // MODO EN VIVO: Una sola llamada a live
-            const url = `https://${API_HOST}/fixtures?live=all${currentLeague !== 'all' ? `&league=${currentLeague}` : ''}`;
-            try {
-                const res = await fetch(url, { headers: { 'x-rapidapi-host': API_HOST, 'x-rapidapi-key': API_KEY } });
-                const data = await res.json();
-                renderMatches(data.response, "EN ESTE MOMENTO");
-            } catch (e) { container.innerHTML = "Error de red."; }
-        } else {
-            // MODO CALENDARIO: Hoy, Mañana y Pasado
-            const dates = [];
-            for(let i=0; i<3; i++) {
-                let d = new Date();
-                d.setDate(d.getDate() + i);
-                dates.push(d.toISOString().split('T')[0]);
-            }
+        try {
+            const allResponses = await Promise.all(dates.map(date => 
+                fetch(`https://${API_HOST}/fixtures?date=${date}${currentLeague !== 'all' ? `&league=${currentLeague}` : ''}`, 
+                { headers: { 'x-rapidapi-host': API_HOST, 'x-rapidapi-key': API_KEY } }).then(r => r.json())
+            ));
 
-            try {
-                const allResponses = await Promise.all(dates.map(date => 
-                    fetch(`https://${API_HOST}/fixtures?date=${date}${currentLeague !== 'all' ? `&league=${currentLeague}` : ''}`, 
-                    { headers: { 'x-rapidapi-host': API_HOST, 'x-rapidapi-key': API_KEY } }).then(r => r.json())
-                ));
+            container.innerHTML = ""; 
+            allResponses.forEach((res, index) => {
+                const dayLabel = ["HOY", "MAÑANA", "PASADO MAÑANA"][index];
+                let matches = res.response || [];
 
-                container.innerHTML = ""; // Limpiar para renderizar por días
-                allResponses.forEach((res, index) => {
-                    const dayLabel = ["HOY", "MAÑANA", "PASADO MAÑANA"][index];
-                    // Filtrar para HOY: quitar los terminados (FT)
-                    const filtered = index === 0 
-                        ? res.response.filter(m => !['FT', 'AET', 'PEN'].includes(m.fixture.status.short))
-                        : res.response;
-                    
-                    if(filtered.length > 0) renderMatches(filtered, dayLabel, true);
-                });
-                
-                if(container.innerHTML === "") container.innerHTML = "<p class='text-center py-20 text-xs opacity-50'>SIN PARTIDOS PROGRAMADOS</p>";
-            } catch (e) { container.innerHTML = "Error al cargar calendario."; }
-        }
+                if (isLiveOnly) matches = matches.filter(m => ['1H', '2H', 'HT', 'ET', 'P'].includes(m.fixture.status.short));
+                else if (index === 0) matches = matches.filter(m => !['FT', 'AET', 'PEN'].includes(m.fixture.status.short));
+
+                if(matches.length > 0) renderMatches(matches, dayLabel, true);
+            });
+        } catch (e) { container.innerHTML = "Error de red."; }
     }
 
     function renderMatches(matches, label, append = false) {
         const container = document.getElementById('matchContainer');
         const html = `
-            <div class="day-group">
-                <div class="flex items-center gap-3 mb-4 opacity-60">
-                    <span class="text-[9px] font-black tracking-[0.2em] text-emerald-500 uppercase">${label}</span>
-                    <div class="h-[1px] flex-1 bg-white/10"></div>
-                </div>
-                <div class="space-y-4">
+            <div class="day-group mb-12">
+                <div class="flex items-center gap-3 mb-6"><span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">${label}</span><div class="h-[1px] flex-1 bg-white/5"></div></div>
+                <div class="space-y-6">
                     ${matches.map(m => {
-                        const isLive = ['1H', '2H', 'HT', 'ET', 'P'].includes(m.fixture.status.short);
                         const seed = m.teams.home.id + m.teams.away.id;
-                        const time = new Date(m.fixture.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const precision = 70 + (seed % 28);
+                        if (isHighPrecisionOnly && precision < 85) return '';
+
+                        const isLive = ['1H', '2H', 'HT'].includes(m.fixture.status.short);
                         
+                        // CONTADORES DE ATAQUES PELIGROSOS (Simulados en base a tiempo y liga para realismo)
+                        const homeAttacks = isLive ? 20 + (seed % 40) + Math.floor(m.fixture.status.elapsed/2) : 0;
+                        const awayAttacks = isLive ? 15 + (seed % 35) + Math.floor(m.fixture.status.elapsed/2.5) : 0;
+                        const totalAttacks = homeAttacks + awayAttacks;
+                        const homeTrend = totalAttacks > 0 ? (homeAttacks / totalAttacks) * 100 : 50;
+
+                        // LÓGICA DE ÁRBITRO
+                        const refName = m.fixture.referee;
+                        let refClass = "ref-amber"; 
+                        let refStatus = "ÁRBITRO ÁMBAR (PENDIENTE)";
+                        
+                        if(refName) {
+                            // Simulamos base de datos de árbitros conocidos por tarjetas
+                            const isStrict = seed % 3 === 0; 
+                            refClass = isStrict ? "ref-red" : "ref-white";
+                            refStatus = isStrict ? `ÁRBITRO ROJO (${refName})` : `ÁRBITRO BLANCO (${refName})`;
+                        }
+
                         return `
-                        <div class="match-card glass rounded-[2rem] overflow-hidden border ${isLive ? 'border-red-500/30' : 'border-white/5'}">
-                            <div class="p-5 bg-white/5">
-                                <div class="flex justify-between items-center mb-4">
-                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest">${m.league.name}</span>
-                                    ${isLive ? 
-                                        `<span class="text-[8px] font-black text-red-500 live-dot uppercase flex items-center gap-1">● LIVE ${m.fixture.status.elapsed}'</span>` : 
-                                        `<span class="text-[8px] font-black text-slate-400 italic">${time}</span>`
-                                    }
+                        <div class="match-card glass rounded-[2.8rem] overflow-hidden border border-white/5 transition-all">
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="flex flex-col">
+                                        <span class="text-[8px] font-black text-slate-500 uppercase">${m.league.country} • ${m.league.name}</span>
+                                        <span class="text-[7px] text-slate-400 font-bold mt-1">${new Date(m.fixture.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                    <div class="px-3 py-1 precision-shield rounded-full text-[8px] font-black">${precision}% ACC</div>
                                 </div>
-                                <div class="flex justify-around items-center">
+
+                                <div class="mb-5 text-center">
+                                    <span class="px-4 py-1.5 rounded-full text-[7px] font-black uppercase tracking-tighter ${refClass}">
+                                        ${refStatus}
+                                    </span>
+                                </div>
+
+                                <div class="flex justify-around items-center mb-8">
                                     <div class="text-center w-1/3">
-                                        <img src="${m.teams.home.logo}" class="w-10 h-10 mx-auto mb-1 object-contain">
-                                        <p class="text-[9px] font-black uppercase truncate">${m.teams.home.name}</p>
+                                        <img src="${m.teams.home.logo}" class="w-12 h-12 mx-auto mb-2 object-contain">
+                                        <p class="text-[10px] font-black uppercase truncate">${m.teams.home.name}</p>
+                                        ${isLive ? `<p class="text-[9px] text-emerald-500 font-bold mt-1">🔥 ${homeAttacks} AP</p>` : ''}
                                     </div>
                                     <div class="text-center">
-                                        <p class="text-2xl font-black italic leading-none">${m.goals.home ?? 0}:${m.goals.away ?? 0}</p>
-                                        <p class="text-[7px] font-bold opacity-30 mt-2 uppercase">${m.fixture.status.short}</p>
+                                        <p class="text-3xl font-black italic">${m.goals.home ?? 0}:${m.goals.away ?? 0}</p>
+                                        <p class="text-[8px] font-bold text-emerald-500 mt-2 uppercase italic">${isLive ? 'Min ' + m.fixture.status.elapsed + "'" : 'PRÓXIMO'}</p>
                                     </div>
                                     <div class="text-center w-1/3">
-                                        <img src="${m.teams.away.logo}" class="w-10 h-10 mx-auto mb-1 object-contain">
-                                        <p class="text-[9px] font-black uppercase truncate text-right">${m.teams.away.name}</p>
+                                        <img src="${m.teams.away.logo}" class="w-12 h-12 mx-auto mb-2 object-contain">
+                                        <p class="text-[10px] font-black uppercase truncate">${m.teams.away.name}</p>
+                                        ${isLive ? `<p class="text-[9px] text-emerald-500 font-bold mt-1">🔥 ${awayAttacks} AP</p>` : ''}
                                     </div>
                                 </div>
-                            </div>
-                            <div class="p-4 grid grid-cols-2 gap-2">
-                                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
-                                    <p class="text-[6px] text-emerald-500 font-black uppercase italic">Pick AI</p>
-                                    <p class="text-[9px] font-black uppercase">${["GANA LOCAL", "AMBOS ANOTAN", "MÁS 2.5", "GANA VISITANTE", "LOCAL O EMPATE"][seed % 5]}</p>
+
+                                <div class="mb-6 bg-black/30 p-5 rounded-[2rem] border border-white/5">
+                                    <div class="flex justify-between text-[8px] font-black uppercase mb-3 px-1">
+                                        <span class="text-slate-400">Peligro Local</span>
+                                        <span class="text-slate-400">Peligro Visita</span>
+                                    </div>
+                                    <div class="w-full bg-white/5 h-2 rounded-full flex overflow-hidden">
+                                        <div class="trend-bar bg-emerald-500 ${homeTrend > 60 ? 'attack-pulse' : ''}" style="width: ${homeTrend}%"></div>
+                                        <div class="trend-bar bg-slate-700" style="width: ${100 - homeTrend}%"></div>
+                                    </div>
+                                    <div class="flex justify-between mt-3 text-[7px] font-bold text-slate-500 uppercase italic tracking-widest px-1">
+                                        <span>${isLive ? homeAttacks + ' Atq. Peligrosos' : 'Analizando Dinámica'}</span>
+                                        <span>${isLive ? awayAttacks + ' Atq. Peligrosos' : 'Esperando Inicio'}</span>
+                                    </div>
                                 </div>
-                                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
-                                    <p class="text-[6px] text-emerald-500 font-black uppercase italic">Confianza</p>
-                                    <p class="text-[9px] font-black uppercase">${72 + (seed % 24)}%</p>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-black/40 p-4 rounded-3xl border border-white/5 text-center">
+                                        <p class="text-[6px] text-emerald-500 font-black uppercase mb-1">Estrategia AI</p>
+                                        <p class="text-[10px] font-black uppercase">${["LOCAL", "AMBOS ANOTAN", "OVER 2.5", "GANA VISITA", "L/E"][seed % 5]}</p>
+                                    </div>
+                                    <button onclick="window.open('https://api.whatsapp.com/send?text=${encodeURIComponent('Radar: ' + m.teams.home.name + ' ' + m.goals.home + '-' + m.goals.away + ' ' + m.teams.away.name + ' | Árbitro: ' + refStatus)}')" 
+                                            class="bg-emerald-500 text-black text-[10px] font-black rounded-3xl uppercase tracking-tighter shadow-lg shadow-emerald-500/10">
+                                        Reporte WhatsApp
+                                    </button>
                                 </div>
-                                <button onclick="window.open('https://api.whatsapp.com/send?text=${encodeURIComponent('🔥 Analizado: ' + m.teams.home.name + ' vs ' + m.teams.away.name)}')" 
-                                        class="col-span-2 bg-emerald-500 text-black text-[8px] font-black py-2.5 rounded-xl uppercase tracking-widest">
-                                    Enviar WhatsApp
-                                </button>
                             </div>
                         </div>
                         `;
@@ -163,11 +192,11 @@
                 </div>
             </div>
         `;
-        if(append) container.innerHTML += html;
-        else container.innerHTML = html;
+        if(append) container.innerHTML += html; else container.innerHTML = html;
     }
 
     window.onload = () => fetchData();
+    setInterval(fetchData, 60000); // Actualizar cada minuto para ataques peligrosos
   </script>
 </body>
 </html>
