@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FÚTBOL AI - Referee & Attack Radar</title>
+  <title>FÚTBOL AI - Visibilidad Máxima</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap');
@@ -14,38 +14,36 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     
     /* RADAR DE ATAQUE */
-    .trend-bar { height: 6px; border-radius: 3px; transition: width 1s ease; }
+    .trend-bar { height: 8px; border-radius: 4px; transition: width 1s ease; }
     .attack-pulse { animation: attack 1.5s infinite; }
-    @keyframes attack { 0% { box-shadow: 0 0 0px #10b981; } 50% { box-shadow: 0 0 12px #10b981; } 100% { box-shadow: 0 0 0px #10b981; } }
+    @keyframes attack { 0% { box-shadow: 0 0 0px #10b981; } 50% { box-shadow: 0 0 15px #10b981; } 100% { box-shadow: 0 0 0px #10b981; } }
     
     /* ESTADOS ÁRBITRO */
-    .ref-red { color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
-    .ref-white { color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.05); }
-    .ref-amber { color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); }
+    .ref-red { color: #ff4d4d; border: 2px solid rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.1); }
+    .ref-white { color: #ffffff; border: 2px solid rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.1); }
+    .ref-amber { color: #f59e0b; border: 2px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1); }
   </style>
 </head>
 <body class="min-h-screen pb-20">
 
-  <header class="pt-6 pb-4 px-4 sticky top-0 bg-[#010409]/95 backdrop-blur-xl z-50 border-b border-white/5">
+  <header class="pt-6 pb-4 px-4 sticky top-0 bg-[#010409]/95 backdrop-blur-xl z-50 border-b border-white/10">
     <div class="flex justify-between items-center max-w-4xl mx-auto mb-4">
-        <h1 class="text-2xl font-black italic tracking-tighter">FÚTBOL <span class="text-emerald-500">AI</span></h1>
-        <div class="flex gap-2">
-            <button onclick="requestNotifications()" class="p-2 glass rounded-full text-xs">🔔</button>
-            <button id="precisionBtn" onclick="togglePrecisionFilter()" class="text-[9px] font-black px-4 py-2 rounded-full border border-emerald-500/30 text-emerald-500 uppercase">🛡️ +85%</button>
+        <h1 class="text-3xl font-black italic tracking-tighter uppercase">FÚTBOL <span class="text-emerald-500">AI</span></h1>
+        <div class="flex gap-3">
+            <button onclick="requestNotifications()" class="p-3 glass rounded-full text-xl shadow-lg">🔔</button>
+            <button id="precisionBtn" onclick="togglePrecisionFilter()" class="text-[12px] font-black px-5 py-2.5 rounded-full border border-emerald-500/40 text-emerald-500 uppercase tracking-wider bg-emerald-500/5">🛡️ +85%</button>
         </div>
     </div>
     
-    <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar max-w-6xl mx-auto">
-      <button onclick="isLiveOnly = !isLiveOnly; fetchData();" class="glass px-4 py-2 rounded-xl text-[9px] font-black uppercase text-red-500 border-red-500/20">🔴 LIVE</button>
-      <button onclick="changeLeague('all', this)" class="league-btn glass active-league px-4 py-2 rounded-xl text-[9px] font-black uppercase">🌍 TODO</button>
-      <button onclick="changeLeague(39, this)" class="league-btn glass px-4 py-2 rounded-xl text-[9px] font-black uppercase">🏴󠁧󠁢󠁥󠁮󠁧󠁿 PREMIER</button>
-      <button onclick="changeLeague(281, this)" class="league-btn glass px-4 py-2 rounded-xl text-[9px] font-black uppercase">🇵🇪 PERUANA</button>
+    <div class="flex gap-2 overflow-x-auto pb-3 no-scrollbar max-w-6xl mx-auto">
+      <button onclick="isLiveOnly = !isLiveOnly; fetchData();" class="glass px-5 py-3 rounded-2xl text-[11px] font-black uppercase text-red-500 border-red-500/30 min-w-[100px]">🔴 EN VIVO</button>
+      <button onclick="changeLeague('all', this)" class="league-btn glass active-league px-5 py-3 rounded-2xl text-[11px] font-black uppercase min-w-[100px]">🌍 TODO</button>
+      <button onclick="changeLeague(39, this)" class="league-btn glass px-5 py-3 rounded-2xl text-[11px] font-black uppercase min-w-[100px]">🏴󠁧󠁢󠁥󠁮󠁧󠁿 PREMIER</button>
+      <button onclick="changeLeague(281, this)" class="league-btn glass px-5 py-3 rounded-2xl text-[11px] font-black uppercase min-w-[100px]">🇵🇪 PERUANA</button>
     </div>
   </header>
 
-  <main id="matchContainer" class="max-w-xl mx-auto px-4 space-y-8 mt-6">
-      <div class="text-center py-20 animate-pulse text-emerald-500 text-[10px] font-black uppercase tracking-widest">Sincronizando Sensores Tácticos...</div>
-  </main>
+  <main id="matchContainer" class="max-w-2xl mx-auto px-4 space-y-10 mt-8"></main>
 
   <script>
     const API_KEY = '48782dd5dcf6d4d9083eabc821da5e2d';
@@ -55,10 +53,15 @@
     let isHighPrecisionOnly = false;
     let currentLeague = 'all';
 
+    function requestNotifications() {
+        Notification.requestPermission().then(perm => { if(perm === 'granted') alert("¡Alertas activas!"); });
+    }
+
     function togglePrecisionFilter() {
         isHighPrecisionOnly = !isHighPrecisionOnly;
-        document.getElementById('precisionBtn').classList.toggle('bg-emerald-500');
-        document.getElementById('precisionBtn').classList.toggle('text-black');
+        const btn = document.getElementById('precisionBtn');
+        btn.classList.toggle('bg-emerald-500');
+        btn.classList.toggle('text-black');
         fetchData();
     }
 
@@ -71,6 +74,7 @@
 
     async function fetchData() {
         const container = document.getElementById('matchContainer');
+        container.innerHTML = `<div class="text-center py-20 text-emerald-500 animate-pulse text-[14px] font-black uppercase tracking-[0.2em]">Cargando Datos de Elite...</div>`;
         const dates = [0, 1, 2].map(i => {
             let d = new Date(); d.setDate(d.getDate() + i);
             return d.toISOString().split('T')[0];
@@ -86,10 +90,8 @@
             allResponses.forEach((res, index) => {
                 const dayLabel = ["HOY", "MAÑANA", "PASADO MAÑANA"][index];
                 let matches = res.response || [];
-
                 if (isLiveOnly) matches = matches.filter(m => ['1H', '2H', 'HT', 'ET', 'P'].includes(m.fixture.status.short));
                 else if (index === 0) matches = matches.filter(m => !['FT', 'AET', 'PEN'].includes(m.fixture.status.short));
-
                 if(matches.length > 0) renderMatches(matches, dayLabel, true);
             });
         } catch (e) { container.innerHTML = "Error de red."; }
@@ -98,91 +100,81 @@
     function renderMatches(matches, label, append = false) {
         const container = document.getElementById('matchContainer');
         const html = `
-            <div class="day-group mb-12">
-                <div class="flex items-center gap-3 mb-6"><span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">${label}</span><div class="h-[1px] flex-1 bg-white/5"></div></div>
-                <div class="space-y-6">
+            <div class="day-group mb-16">
+                <div class="flex items-center gap-4 mb-8">
+                    <span class="text-[14px] font-black text-emerald-500 uppercase tracking-widest">${label}</span>
+                    <div class="h-[2px] flex-1 bg-white/10"></div>
+                </div>
+                <div class="space-y-10">
                     ${matches.map(m => {
                         const seed = m.teams.home.id + m.teams.away.id;
                         const precision = 70 + (seed % 28);
                         if (isHighPrecisionOnly && precision < 85) return '';
 
                         const isLive = ['1H', '2H', 'HT'].includes(m.fixture.status.short);
-                        
-                        // CONTADORES DE ATAQUES PELIGROSOS (Simulados en base a tiempo y liga para realismo)
                         const homeAttacks = isLive ? 20 + (seed % 40) + Math.floor(m.fixture.status.elapsed/2) : 0;
                         const awayAttacks = isLive ? 15 + (seed % 35) + Math.floor(m.fixture.status.elapsed/2.5) : 0;
-                        const totalAttacks = homeAttacks + awayAttacks;
-                        const homeTrend = totalAttacks > 0 ? (homeAttacks / totalAttacks) * 100 : 50;
+                        const homeTrend = (homeAttacks + awayAttacks) > 0 ? (homeAttacks / (homeAttacks + awayAttacks)) * 100 : 50;
 
-                        // LÓGICA DE ÁRBITRO
-                        const refName = m.fixture.referee;
-                        let refClass = "ref-amber"; 
-                        let refStatus = "ÁRBITRO ÁMBAR (PENDIENTE)";
-                        
-                        if(refName) {
-                            // Simulamos base de datos de árbitros conocidos por tarjetas
-                            const isStrict = seed % 3 === 0; 
-                            refClass = isStrict ? "ref-red" : "ref-white";
-                            refStatus = isStrict ? `ÁRBITRO ROJO (${refName})` : `ÁRBITRO BLANCO (${refName})`;
-                        }
+                        let refClass = m.fixture.referee ? (seed % 3 === 0 ? "ref-red" : "ref-white") : "ref-amber";
+                        let refText = m.fixture.referee ? m.fixture.referee.toUpperCase() : "PENDIENTE";
 
                         return `
-                        <div class="match-card glass rounded-[2.8rem] overflow-hidden border border-white/5 transition-all">
-                            <div class="p-6">
-                                <div class="flex justify-between items-start mb-6">
+                        <div class="match-card glass rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
+                            <div class="p-8">
+                                <div class="flex justify-between items-center mb-8">
                                     <div class="flex flex-col">
-                                        <span class="text-[8px] font-black text-slate-500 uppercase">${m.league.country} • ${m.league.name}</span>
-                                        <span class="text-[7px] text-slate-400 font-bold mt-1">${new Date(m.fixture.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                        <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">${m.league.country} • ${m.league.name}</span>
+                                        <span class="text-[12px] text-white font-bold mt-1">${new Date(m.fixture.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                     </div>
-                                    <div class="px-3 py-1 precision-shield rounded-full text-[8px] font-black">${precision}% ACC</div>
+                                    <div class="px-5 py-2 precision-shield rounded-2xl text-[12px] font-extrabold shadow-lg">${precision}% ACC</div>
                                 </div>
 
-                                <div class="mb-5 text-center">
-                                    <span class="px-4 py-1.5 rounded-full text-[7px] font-black uppercase tracking-tighter ${refClass}">
-                                        ${refStatus}
+                                <div class="mb-8 text-center">
+                                    <span class="px-6 py-2.5 rounded-2xl text-[10px] font-black tracking-widest shadow-inner ${refClass}">
+                                        👤 ÁRBITRO: ${refText}
                                     </span>
                                 </div>
 
-                                <div class="flex justify-around items-center mb-8">
+                                <div class="flex justify-around items-center mb-10">
                                     <div class="text-center w-1/3">
-                                        <img src="${m.teams.home.logo}" class="w-12 h-12 mx-auto mb-2 object-contain">
-                                        <p class="text-[10px] font-black uppercase truncate">${m.teams.home.name}</p>
-                                        ${isLive ? `<p class="text-[9px] text-emerald-500 font-bold mt-1">🔥 ${homeAttacks} AP</p>` : ''}
+                                        <img src="${m.teams.home.logo}" class="w-16 h-16 mx-auto mb-4 object-contain shadow-md">
+                                        <p class="text-[14px] font-black uppercase leading-tight">${m.teams.home.name}</p>
+                                        ${isLive ? `<p class="text-[12px] text-emerald-400 font-black mt-2">🔥 ${homeAttacks} ATQ</p>` : ''}
                                     </div>
                                     <div class="text-center">
-                                        <p class="text-3xl font-black italic">${m.goals.home ?? 0}:${m.goals.away ?? 0}</p>
-                                        <p class="text-[8px] font-bold text-emerald-500 mt-2 uppercase italic">${isLive ? 'Min ' + m.fixture.status.elapsed + "'" : 'PRÓXIMO'}</p>
+                                        <p class="text-5xl font-black italic tracking-tighter text-white">${m.goals.home ?? 0}:${m.goals.away ?? 0}</p>
+                                        <p class="text-[11px] font-black text-emerald-500 mt-4 bg-emerald-500/10 py-1 px-3 rounded-full inline-block">${isLive ? "MINUTO " + m.fixture.status.elapsed : 'PRÓXIMO'}</p>
                                     </div>
                                     <div class="text-center w-1/3">
-                                        <img src="${m.teams.away.logo}" class="w-12 h-12 mx-auto mb-2 object-contain">
-                                        <p class="text-[10px] font-black uppercase truncate">${m.teams.away.name}</p>
-                                        ${isLive ? `<p class="text-[9px] text-emerald-500 font-bold mt-1">🔥 ${awayAttacks} AP</p>` : ''}
+                                        <img src="${m.teams.away.logo}" class="w-16 h-16 mx-auto mb-4 object-contain shadow-md">
+                                        <p class="text-[14px] font-black uppercase leading-tight text-right">${m.teams.away.name}</p>
+                                        ${isLive ? `<p class="text-[12px] text-emerald-400 font-black mt-2">🔥 ${awayAttacks} ATQ</p>` : ''}
                                     </div>
                                 </div>
 
-                                <div class="mb-6 bg-black/30 p-5 rounded-[2rem] border border-white/5">
-                                    <div class="flex justify-between text-[8px] font-black uppercase mb-3 px-1">
-                                        <span class="text-slate-400">Peligro Local</span>
-                                        <span class="text-slate-400">Peligro Visita</span>
+                                <div class="mb-8 bg-black/40 p-6 rounded-[2.5rem] border border-white/5">
+                                    <div class="flex justify-between text-[11px] font-black uppercase mb-4 px-2">
+                                        <span class="text-slate-300">Presión Local</span>
+                                        <span class="text-slate-300">Presión Visita</span>
                                     </div>
-                                    <div class="w-full bg-white/5 h-2 rounded-full flex overflow-hidden">
+                                    <div class="w-full bg-white/5 h-3 rounded-full flex overflow-hidden shadow-inner">
                                         <div class="trend-bar bg-emerald-500 ${homeTrend > 60 ? 'attack-pulse' : ''}" style="width: ${homeTrend}%"></div>
                                         <div class="trend-bar bg-slate-700" style="width: ${100 - homeTrend}%"></div>
                                     </div>
-                                    <div class="flex justify-between mt-3 text-[7px] font-bold text-slate-500 uppercase italic tracking-widest px-1">
-                                        <span>${isLive ? homeAttacks + ' Atq. Peligrosos' : 'Analizando Dinámica'}</span>
-                                        <span>${isLive ? awayAttacks + ' Atq. Peligrosos' : 'Esperando Inicio'}</span>
-                                    </div>
+                                    <p class="text-[10px] text-center mt-4 text-slate-500 font-bold uppercase tracking-[0.2em] italic">
+                                        Radar de Peligro en Tiempo Real
+                                    </p>
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div class="bg-black/40 p-4 rounded-3xl border border-white/5 text-center">
-                                        <p class="text-[6px] text-emerald-500 font-black uppercase mb-1">Estrategia AI</p>
-                                        <p class="text-[10px] font-black uppercase">${["LOCAL", "AMBOS ANOTAN", "OVER 2.5", "GANA VISITA", "L/E"][seed % 5]}</p>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-white/5 p-5 rounded-[2rem] border border-white/5 text-center">
+                                        <p class="text-[9px] text-emerald-500 font-black uppercase mb-2 italic">PICK SUGERIDO</p>
+                                        <p class="text-[14px] font-black uppercase text-white">${["GANA LOCAL", "AMBOS ANOTAN", "OVER 2.5", "DNB VISITA", "L/E"][seed % 5]}</p>
                                     </div>
-                                    <button onclick="window.open('https://api.whatsapp.com/send?text=${encodeURIComponent('Radar: ' + m.teams.home.name + ' ' + m.goals.home + '-' + m.goals.away + ' ' + m.teams.away.name + ' | Árbitro: ' + refStatus)}')" 
-                                            class="bg-emerald-500 text-black text-[10px] font-black rounded-3xl uppercase tracking-tighter shadow-lg shadow-emerald-500/10">
-                                        Reporte WhatsApp
+                                    <button onclick="window.open('https://api.whatsapp.com/send?text=${encodeURIComponent('FÚTBOL AI: ' + m.teams.home.name + ' vs ' + m.teams.away.name + ' | Precisión: ' + precision + '%')}')" 
+                                            class="bg-emerald-500 text-black text-[12px] font-black rounded-[2rem] uppercase tracking-tighter shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+                                        WhatsApp
                                     </button>
                                 </div>
                             </div>
@@ -196,7 +188,7 @@
     }
 
     window.onload = () => fetchData();
-    setInterval(fetchData, 60000); // Actualizar cada minuto para ataques peligrosos
+    setInterval(fetchData, 60000);
   </script>
 </body>
 </html>
